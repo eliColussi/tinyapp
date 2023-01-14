@@ -22,7 +22,7 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]]
+    //user: users[req.cookies["user_id"]]
   };
 
   app.post("/urls", (req, res) => {
@@ -31,6 +31,13 @@ app.get("/urls", (req, res) => {
     urlDatabase[shortURLId] = longURLNew;
 
     res.redirect(`/urls/${shortURLId}`);
+  });
+
+  app.post("/urls/:id/delete", (req, res) => {
+    const shortURLId = req.params.id;
+    delete urlDatabase[shortURLId];
+
+    res.redirect("/urls");
   });
 
   app.get("/u/:id", (req, res) => {
@@ -45,6 +52,7 @@ app.get("/urls", (req, res) => {
     // redirect client to site
     res.redirect(longURL);
   });
+
 
   res.render("urls_index", templateVars);
 });
