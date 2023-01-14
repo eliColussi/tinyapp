@@ -24,7 +24,14 @@
         </a>
       </p>
     </div>
-    <div class="card-footer text-muted"></div>
+    <div class="card-footer text-muted">
+      <h5 class="card-title">Edit</h5>
+      <form method="POST" action="/urls/<%= id %>">
+        <label for="longURL">New URL:</label>
+        <input type="text" name="longURL" placeholder="http://" ?>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
   </div>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
