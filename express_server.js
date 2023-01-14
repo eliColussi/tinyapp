@@ -102,37 +102,6 @@ app.get("/urls", (req, res) => {
     res.render("login", templateVars);
   });
 
-
-
-  //login route
-  app.get("/login", (req, res) => {
-    const templateVars = {
-      user: users[req.cookies["user_id"]]
-    };
-    res.render("login", templateVars);
-  });
-
-  // post login 
-  app.post("/login", (req, res) => {
-    const userEmail = req.body.email;
-    const userPassword = req.body.password;
-    const userFound = getUserByEmail(userEmail);
-
-    // if user's email does not exist in users object, send 403 status code
-    if (!userFound) {
-      return res.status(403).send(`${res.statusCode} error. User with email ${userEmail} cannot be found.`)
-    }
-
-    // if user's password does not match password in users object, send 403 status code
-    if (userPassword !== userFound.password) {
-      return res.status(403).send(`${res.statusCode} error. The password entered is incorrect.`)
-    }
-
-    const userID = userFound.id
-    res.cookie('user_id', userID);
-    res.redirect("/urls");
-  });
-
   //register get request
   app.get("/register", (req, res) => {
     const templateVars = {
@@ -161,6 +130,37 @@ app.get("/urls", (req, res) => {
 
 
   res.render("urls_index", templateVars);
+});
+
+
+//get login route
+
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["user_id"]]
+  };
+  res.render("login", templateVars);
+});
+
+// post login 
+app.post("/login", (req, res) => {
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+  const userFound = getUserByEmail(userEmail);
+
+  // if user's email does not exist in users object, send 403 status code
+  if (!userFound) {
+    return res.status(403).send(`${res.statusCode} error. User with email ${userEmail} cannot be found.`)
+  }
+
+  // if user's password does not match password in users object, send 403 status code
+  if (userPassword !== userFound.password) {
+    return res.status(403).send(`${res.statusCode} error. The password entered is incorrect.`)
+  }
+
+  const userID = userFound.id
+  res.cookie('user_id', userID);
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
