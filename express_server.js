@@ -27,6 +27,7 @@ const users = {
   }
 };
 
+
 //helpers!
 const getUserByEmail = function (email) {
   for (const userID in users) {
@@ -40,12 +41,11 @@ const getUserByEmail = function (email) {
 
 function generateRandomString() {
   return Math.random().toString(36).slice(2);
-}
+};
 
 
 
 //routes//
-
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -110,11 +110,24 @@ app.get("/urls", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  const longURLNew = req.body.longURL;
-  const shortURLId = generateRandomString();
-  urlDatabase[shortURLId] = longURLNew;
 
-  res.redirect(`/urls/${shortURLId}`);
+  // if user is not logged in, they cannot create shortURL
+  if (!req.cookies["user_id"]) {
+    res.status(401).send(`${res.statusCode} error. Please login to submit URL`);
+  } else {
+    const longURLNew = req.body.longURL;
+    const shortURLId = generateRandomString();
+    const userID = req.cookies["user_id"]
+
+    urlDatabase[shortURLId] = {
+      longURL: longURLNew,
+      userID
+    }
+    console.log(urlDatabase);
+
+    res.redirect(`/urls/${shortURLId}`);
+  }
+  console.log(urlDatabase);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
