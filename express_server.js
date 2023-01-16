@@ -167,27 +167,6 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
-
-
-app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
-
-  res.redirect("/login");
-});
-
-
-
-
-
-//get login route
-
-app.get("/login", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]]
-  };
-  res.render("login", templateVars);
-});
-
 // post login 
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
@@ -208,6 +187,15 @@ app.post("/login", (req, res) => {
   res.cookie('user_id', userID);
   res.redirect("/urls");
 });
+
+
+app.post("/logout", (req, res) => {
+  res.clearCookie('user_id');
+
+  res.redirect("/login");
+});
+
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
