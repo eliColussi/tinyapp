@@ -4,7 +4,13 @@ const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieSession());
+
+app.use(cookieSession({
+  name: "session",
+  keys: ["protectedKey"]
+}));
+
+
 app.set("view engine", "ejs");
 
 
@@ -74,12 +80,13 @@ app.get("/", (req, res) => {
 
 // GET route 
 app.get("/register", (req, res) => {
+  const userID = req.session.user_id;
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[userID]
   };
 
   // check if user is logged in
-  if (req.cookies["user_id"]) {
+  if (userID) {
     res.redirect("/urls");
   }
 
@@ -112,7 +119,7 @@ app.post("/register", (req, res) => {
     password: hashedPassword
   };
 
-  res.cookie('user_id', userID);
+  req.session.user_id = userID;
   res.redirect("/urls");
 });
 
