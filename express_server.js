@@ -199,22 +199,22 @@ app.get("/urls", (req, res) => {
 // post urls route
 app.post("/urls", (req, res) => {
 
-  if (!req.cookies["user_id"]) {
+  const longURLNew = req.body.longURL;
+  const shortURLId = generateRandomString();
+  const userID = req.session.user_id
+
+  if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login to submit URL`);
   } else {
-    const longURLNew = req.body.longURL;
-    const shortURLId = generateRandomString();
-    const userID = req.cookies["user_id"]
+
 
     urlDatabase[shortURLId] = {
       longURL: longURLNew,
       userID
     }
-    console.log(urlDatabase);
 
     res.redirect(`/urls/${shortURLId}`);
   }
-  console.log(urlDatabase);
 });
 
 // GET route
@@ -238,21 +238,19 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  if (!req.cookies["user_id"]) {
-    res.status(401).send(`${res.statusCode} error. Please login or register to access this resource`);
-  }
-
-  // users can only see urls they created
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id
   const urlsUserCanAccess = geturlsForUserID(userID);
   const shortURLID = req.params.id;
 
+  if (!userID) {
+    res.status(401).send(`${res.statusCode} error. Please login or register to access this resource`);
+  }
 
   if (!(shortURLID in urlsUserCanAccess)) {
     res.status(403).send(`${res.statusCode} error. You are not authorized to access this resource`);
   } else {
     const templateVars = {
-      id: userID,
+      id: shortURLID,
       longURL: urlsUserCanAccess[shortURLID].longURL,
       user: users[userID]
     };
@@ -264,18 +262,20 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const shortURLID = req.params.id;
   const longURLUpdate = req.body.longURL;
-
+  const userID = req.session.user_id;
+  const urlsUserCanAccess = getUrlsForUserID(userID, urlDatabase);
   // error if no shortUrlId
-  if (!(shortURLID in urlDatabase)) {
+  if (!(shortURLID in urlsUserCanAccess)) {
     res.status(404).send(`${res.statusCode} error.The url you are trying to update does not exist`);
   }
 
   // send error if user is not logged in
-  if (!req.cookies["user_id"]) {
+  if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login or register to update this resource`);
   } else {
     urlDatabase[shortURLID] = {
       longURL: longURLUpdate,
+      userID
     }
 
     res.redirect("/urls");
@@ -287,23 +287,21 @@ app.post("/urls/:id", (req, res) => {
 // post route to remove deleted URL
 app.post("/urls/:id/delete", (req, res) => {
   const shortURLID = req.params.id;
+  const userID = req.session.user_id;
+  const urlsUserCanAccess = getUrlsForUserID(userID, urlDatabase);
 
   // error if short id doesnt exist
-  if (!(shortURLID in urlDatabase)) {
+  if (!(shortURLID in urlsUserCanAccess)) {
     res.status(404).send(`${res.statusCode} error.The url you are trying to delete does not exist`);
   }
 
   // error if user is not logged in
-  if (!req.cookies["user_id"]) {
+  if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login or register to delete this resource`);
   } else {
     delete urlDatabase[shortURLId];
-
     res.redirect("/urls");
-
   }
-
-  console.log(urlDatabase);
 });
 
 
