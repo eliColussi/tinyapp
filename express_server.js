@@ -128,12 +128,13 @@ app.post("/register", (req, res) => {
 
 // get login route 
 app.get("/login", (req, res) => {
+  const userID = req.session.user_id;
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[userID]
   };
 
   // redirect to /urls 
-  if (req.cookies["user_id"]) {
+  if (userID) {
     res.redirect("/urls");
   }
   //render login
@@ -157,7 +158,7 @@ app.post("/login", (req, res) => {
   }
 
   const userID = userFound.id
-  res.cookie('user_id', userID);
+  req.session.user_id = userID;
   res.redirect("/urls");
 });
 
@@ -166,7 +167,8 @@ app.post("/login", (req, res) => {
 
 // post logout route
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  //clear the cookies
+  req.session = null;
 
   res.redirect("/login");
 });
@@ -176,17 +178,18 @@ app.post("/logout", (req, res) => {
 
 // get urls 
 app.get("/urls", (req, res) => {
+  const userID = req.session.user_id;
+  const urlsUserCanAccess = getUrlsForUserID(userID, urlDatabase);
+
   // user cannot access /urls if not logged in
-  if (!req.cookies["user_id"]) {
+
+  if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login or register to access this resource`);
   }
 
-  const userID = req.cookies["user_id"]
-  const urlsUserCanAccess = geturlsForUserID(userID);
-
   const templateVars = {
     urls: urlsUserCanAccess,
-    user: users[req.cookies["user_id"]]
+    user: users[userID]
   };
 
   res.render("urls_index", templateVars);
@@ -216,11 +219,13 @@ app.post("/urls", (req, res) => {
 
 // GET route
 app.get("/urls/new", (req, res) => {
+  const userID = req.session.user_id
+
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[userID]
   };
 
-  if (!req.cookies["user_id"]) {
+  if (!userID) {
     res.redirect("/login");
   }
   res.render("urls_new", templateVars);
