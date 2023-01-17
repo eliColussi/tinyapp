@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
@@ -91,6 +92,8 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
+  const saltRounds = bcrypt.getRounds(10);
+  const hashedPassword = bcrypt.hashSync(userPassword, saltRounds)
 
   if (!userEmail || !userPassword) {
     return res.status(400).send(`${res.statusCode} error. Please enter valid email and password`)
@@ -106,7 +109,7 @@ app.post("/register", (req, res) => {
   users[userID] = {
     id: userID,
     email: userEmail,
-    password: userPassword
+    password: hashedPassword
   };
 
   res.cookie('user_id', userID);
@@ -142,8 +145,8 @@ app.post("/login", (req, res) => {
   }
 
   // if user's password does not match send 403 status code
-  if (userPassword !== userFound.password) {
-    return res.status(403).send(`${res.statusCode} error. The password entered is incorrect.`)
+  if (!bcrypt.compareSync(userPassword, userFound.password)) {
+    return res.status(403).send(`${res.statusCode} The password you entered doesn't match our system`)
   }
 
   const userID = userFound.id
