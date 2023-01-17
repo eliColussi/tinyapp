@@ -1,10 +1,10 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession());
 app.set("view engine", "ejs");
 
 
@@ -32,7 +32,7 @@ const users = {
     id: "3g6j0s",
     email: "jimmy@gmail.com",
     password: "000"
-  },
+  }
 };
 
 // helpers
