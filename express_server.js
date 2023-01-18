@@ -3,6 +3,9 @@ const app = express();
 const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const { getUserByEmail, generateRandomString, getUrlsForUserID } = require('./helpers');
+const { urlDatabase, users } = require('./database');
+
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieSession({
@@ -15,67 +18,20 @@ app.set("view engine", "ejs");
 
 
 
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "h67f5h"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "h67f5h"
-  },
-};
-
-// users
-const users = {
-  "h67f5h": {
-    id: "h67f5h",
-    email: "eli@gmail.com",
-    password: "1234"
-  },
-
-  "3g6j0s": {
-    id: "3g6j0s",
-    email: "jimmy@gmail.com",
-    password: "000"
-  }
-};
-
-// helpers
-const generateRandomString = function () {
-  return Math.random().toString(36).slice(2);
-};
-
-const getUserByEmail = function (email) {
-  for (const userID in users) {
-    if (users[userID].email === email) {
-      return users[userID];
-    }
-  }
-  return null;
-};
-
-const geturlsForUserID = function (userID) {
-  const urlObj = {}; // empty object to take in list of short url IDs and longURLs
-
-  for (const urlID in urlDatabase) {
-    if (urlDatabase[urlID].userID === userID) {
-      urlObj[urlID] = {
-        longURL: urlDatabase[urlID].longURL,
-      }
-    }
-  }
-  return urlObj;
-}
 
 
 //routes//
 
 
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  const userID = req.session.user_id;
+  // check if user is not logged in - if not, redirect to /login
+  if (!userID) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
 });
-
 
 
 // GET route 
@@ -84,41 +40,34 @@ app.get("/register", (req, res) => {
   const templateVars = {
     user: users[userID]
   };
-
-  // check if user is logged in
+  // check if user is logged in. If they are, redirect to /urls 
   if (userID) {
     res.redirect("/urls");
   }
-
-
+  // if user is not logged in, they can access registration page
   res.render("register", templateVars);
 });
 
-// POST route 
+// post route 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  const saltRounds = bcrypt.getRounds(10);
-  const hashedPassword = bcrypt.hashSync(userPassword, saltRounds)
-
+  const hashedPassword = bcrypt.hashSync(userPassword, 10);
+  const foundUser = getUserByEmail(userEmail, users);
+  // if email or password fields are empty, send error message
   if (!userEmail || !userPassword) {
     return res.status(400).send(`${res.statusCode} error. Please enter valid email and password`)
   }
-
-  //check to see if user with email already exists
-  const foundUser = getUserByEmail(userEmail);
-
   if (foundUser) {
     return res.status(400).send(`${res.statusCode} error. User with email ${userEmail} already exists`);
   }
-
   users[userID] = {
     id: userID,
     email: userEmail,
     password: hashedPassword
   };
-
+  // set session cookie and redirect to /urls
   req.session.user_id = userID;
   res.redirect("/urls");
 });
@@ -126,38 +75,35 @@ app.post("/register", (req, res) => {
 
 
 
-// get login route 
+// get route 
 app.get("/login", (req, res) => {
   const userID = req.session.user_id;
   const templateVars = {
     user: users[userID]
   };
-
-  // redirect to /urls 
+  // if user is logged in, redirect to /urls 
   if (userID) {
     res.redirect("/urls");
   }
-  //render login
+  // if user is not logged in, they can access login page
   res.render("login", templateVars);
 });
 
-// post login route 
+// POST route 
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  const userFound = getUserByEmail(userEmail);
-
-  // send 403 error code
+  const userFound = getUserByEmail(userEmail, users);
+  // if user's email does not exist in users object, send error message
   if (!userFound) {
     return res.status(403).send(`${res.statusCode} error. User with email ${userEmail} cannot be found.`)
   }
-
-  // if user's password does not match send 403 status code
+  // if user's password does not match password in users object, send error message
   if (!bcrypt.compareSync(userPassword, userFound.password)) {
-    return res.status(403).send(`${res.statusCode} The password you entered doesn't match our system`)
+    return res.status(403).send(`${res.statusCode} error. The password entered is incorrect.`)
   }
-
-  const userID = userFound.id
+  // if email and password are correct, set session cookie and redirect to /urls page
+  const userID = userFound.id;
   req.session.user_id = userID;
   res.redirect("/urls");
 });
@@ -238,11 +184,11 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const userID = req.session.user_id
-  const urlsUserCanAccess = geturlsForUserID(userID);
+  const userID = req.session.user_id;
+  const urlsUserCanAccess = getUrlsForUserID(userID, urlDatabase);
   const shortURLID = req.params.id;
 
-  if (!userID) {
+  if (!shortURLID in urlDatabase) {
     res.status(401).send(`${res.statusCode} error. Please login or register to access this resource`);
   }
 
