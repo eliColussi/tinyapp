@@ -227,7 +227,6 @@ app.post("/urls/:id", (req, res) => {
     res.redirect("/urls");
   }
 
-  console.log(urlDatabase);
 });
 
 // post route to remove deleted URL
@@ -237,7 +236,7 @@ app.post("/urls/:id/delete", (req, res) => {
   const urlsUserCanAccess = getUrlsForUserID(userID, urlDatabase);
 
   // error if short id doesnt exist
-  if (!(shortURLID in urlsUserCanAccess)) {
+  if (!(shortURLID in urlDatabase)) {
     res.status(404).send(`${res.statusCode} error.The url you are trying to delete does not exist`);
   }
 
@@ -245,7 +244,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login or register to delete this resource`);
   } else {
-    delete urlDatabase[shortURLId];
+    delete urlDatabase[shortURLID];
     res.redirect("/urls");
   }
 });
