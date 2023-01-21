@@ -77,16 +77,17 @@ app.post("/register", (req, res) => {
 
 // get route 
 app.get("/login", (req, res) => {
+  console.log("got here")
   const userID = req.session.user_id;
   const templateVars = {
     user: users[userID]
   };
   // if user is logged in, redirect to /urls 
   if (userID) {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
   // if user is not logged in, they can access login page
-  res.render("login", templateVars);
+  return res.render("login", templateVars);
 });
 
 // POST route 
@@ -128,7 +129,6 @@ app.get("/urls", (req, res) => {
   const urlsUserCanAccess = getUrlsForUserID(userID, urlDatabase);
 
   // user cannot access /urls if not logged in
-
   if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login or register to access this resource`);
   }
@@ -137,7 +137,6 @@ app.get("/urls", (req, res) => {
     urls: urlsUserCanAccess,
     user: users[userID]
   };
-
   res.render("urls_index", templateVars);
 });
 
@@ -146,20 +145,19 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
 
   const longURLNew = req.body.longURL;
-  const shortURLId = generateRandomString();
+  const shortURLID = generateRandomString();
   const userID = req.session.user_id
 
   if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login to submit URL`);
+
   } else {
-
-
-    urlDatabase[shortURLId] = {
+    urlDatabase[shortURLID] = {
       longURL: longURLNew,
       userID
     }
 
-    res.redirect(`/urls/${shortURLId}`);
+    res.redirect(`/urls/${shortURLID}`);
   }
 });
 
@@ -243,11 +241,17 @@ app.post("/urls/:id/delete", (req, res) => {
   // error if user is not logged in
   if (!userID) {
     res.status(401).send(`${res.statusCode} error. Please login or register to delete this resource`);
+  }
+
+  if (!shortURLID in urlsUserCanAccess) {
+    res.status(403).send`${res.statusCode} error. Insufficient permission to delete this resource`
+
   } else {
     delete urlDatabase[shortURLID];
     res.redirect("/urls");
   }
 });
+
 
 
 
